@@ -1,9 +1,18 @@
 package com.haythem.Security.user;
 
 import com.haythem.Security.role.Role;
-import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -19,46 +28,40 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static jakarta.persistence.FetchType.EAGER;
+
+
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "_user")
 @EntityListeners(AuditingEntityListener.class)
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class User implements UserDetails, Principal {
+
     @Id
     @GeneratedValue
-    Integer id;
-    String firstName;
-    String lastName;
-    LocalDate dateOfBirth;
+    private Integer id;
+    private String firstname;
+    private String lastname;
+    private LocalDate dateOfBirth;
     @Column(unique = true)
-    String email;
-    String password;
-    boolean accountLocked;
-    boolean enabled;
+    private String email;
+    private String password;
+    private boolean accountLocked;
+    private boolean enabled;
+    @ManyToMany(fetch = EAGER)
+    private List<Role> roles;
 
-
-    //used for the auditing thing
     @CreatedDate
-    @Column(nullable = false,updatable = false)
-    LocalDateTime createdDate;
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdDate;
+
     @LastModifiedDate
     @Column(insertable = false)
-    LocalDateTime lastModifiedDate;
-
-    @ManyToMany(fetch = FetchType.EAGER)
-    List<Role> roles;
-
-
-
-    @Override
-    public String getName() {
-        return email;
-    }
+    private LocalDateTime lastModifiedDate;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -97,7 +100,17 @@ public class User implements UserDetails, Principal {
     public boolean isEnabled() {
         return enabled;
     }
+
     public String fullName() {
-        return firstName+" "+lastName;
+        return getFirstname() + " " + getLastname();
+    }
+
+    @Override
+    public String getName() {
+        return email;
+    }
+
+    public String getFullName() {
+        return firstname + " " + lastname;
     }
 }
