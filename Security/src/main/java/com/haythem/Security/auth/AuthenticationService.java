@@ -36,10 +36,11 @@ public class AuthenticationService {
 
     @Value("${application.mailing.frontend.activation-url}")
     private String activationUrl;
+
     public void register(RegistrationRequest request) throws MessagingException {
         var userRole = roleRepository.findByName("USER")
                 //todo - better exception handling
-                .orElseThrow(()->new IllegalStateException("ROLE USER was not initialized"));
+                .orElseThrow(() -> new IllegalStateException("ROLE USER was not initialized"));
         var user = User.builder()
                 .firstname(request.getFirstName())
                 .lastname(request.getLastName())
@@ -48,8 +49,7 @@ public class AuthenticationService {
                 .accountLocked(false)
                 .enabled(false)
                 .roles(List.of(userRole))
-                .build()
-                ;
+                .build();
         userRepository.save(user);
         sendValidationEmail(user);
     }
@@ -57,7 +57,6 @@ public class AuthenticationService {
     private void sendValidationEmail(User user) throws MessagingException {
         var newToken = generateAndSavaActivationToken(user);
         //send email
-
         emailService.sendEmail(
                 user.getEmail(),
                 user.fullName(),
@@ -76,8 +75,7 @@ public class AuthenticationService {
                 .createdAt(LocalDateTime.now())
                 .expiresAt(LocalDateTime.now().plusMinutes(15))
                 .user(user)
-                .build()
-                ;
+                .build();
         tokenRepository.save(token);
         return generatedToken;
     }
@@ -86,7 +84,7 @@ public class AuthenticationService {
         String charachters = "0123456789";
         StringBuilder codeBuilder = new StringBuilder();
         SecureRandom secureRandom = new SecureRandom();
-        for(int i=0;i<length;i++) {
+        for (int i = 0; i < length; i++) {
             int randomIndex = secureRandom.nextInt(charachters.length());
             codeBuilder.append(charachters.charAt(randomIndex));
         }
@@ -100,14 +98,13 @@ public class AuthenticationService {
                         request.getPassword()
                 )
         );
-        var claims = new HashMap<String,Object>();
+        var claims = new HashMap<String, Object>();
         var user = ((User) auth.getPrincipal());
-        var jwtToken = jwtService.generateToken(claims,user);
+        var jwtToken = jwtService.generateToken(claims, user);
         return AuthenticationResponse.builder()
                 .token(jwtToken).build();
     }
 
-//    @Transactional
     public void activateAccount(String token) throws MessagingException {
         Token savedToken = tokenRepository.findByToken(token)
                 // todo exception has to be defined
