@@ -4,10 +4,7 @@ import com.haythem.Security.email.EmailService;
 import com.haythem.Security.email.EmailTemplateName;
 import com.haythem.Security.role.RoleRepository;
 import com.haythem.Security.security.JwtService;
-import com.haythem.Security.user.Token;
-import com.haythem.Security.user.TokenRepository;
-import com.haythem.Security.user.User;
-import com.haythem.Security.user.UserRepository;
+import com.haythem.Security.user.*;
 import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -38,9 +35,9 @@ public class AuthenticationService {
     private String activationUrl;
 
     public void register(RegistrationRequest request) throws MessagingException {
-        var userRole = roleRepository.findByName("USER")
-                //todo - better exception handling
-                .orElseThrow(() -> new IllegalStateException("ROLE USER was not initialized"));
+//        var userRole = roleRepository.findByName("USER")
+//                //todo - better exception handling
+//                .orElseThrow(() -> new IllegalStateException("ROLE USER was not initialized"));
         var user = User.builder()
                 .firstname(request.getFirstName())
                 .lastname(request.getLastName())
@@ -48,7 +45,7 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .accountLocked(false)
                 .enabled(false)
-                .roles(List.of(userRole))
+                .role(request.getRole())
                 .build();
         userRepository.save(user);
         sendValidationEmail(user);

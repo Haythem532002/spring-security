@@ -1,5 +1,6 @@
 package com.haythem.Security.auth;
 
+import com.haythem.Security.user.RoleEnum;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
@@ -22,6 +23,8 @@ public class RegistrationRequest {
     private String email;
     @NotEmpty(message = "Password is mandatory")
     @NotBlank(message = "Password is mandatory")
-    @Size(min = 8,message = "Password should be 8 charachters long minimum")
+    @Size(min = 8, message = "Password should be 8 charachters long minimum")
     private String password;
+
+    private RoleEnum role;
 }

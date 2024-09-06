@@ -27,12 +27,12 @@ public class Role {
     @Column(unique = true)
     String name;
 
-    @ManyToMany(mappedBy = "roles")
-    @JsonIgnore
-    List<User> users;
+//    @ManyToMany(mappedBy = "roles")
+//    @JsonIgnore
+//    List<User> users;
 
     @CreatedDate
-    @Column(nullable = false,updatable = false)
+    @Column(nullable = false, updatable = false)
     LocalDateTime createdDate;
     @LastModifiedDate
     @Column(insertable = false)
