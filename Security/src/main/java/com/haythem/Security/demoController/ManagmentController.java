@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/managment")
 public class ManagmentController {
-    @GetMapping("")
+    @GetMapping
     public String get() {
         return "GET : managment controller";
     }

@@ -2,11 +2,12 @@ package com.haythem.Security.auth;
 
 import com.haythem.Security.email.EmailService;
 import com.haythem.Security.email.EmailTemplateName;
-import com.haythem.Security.role.RoleRepository;
 import com.haythem.Security.security.JwtService;
-import com.haythem.Security.user.*;
+import com.haythem.Security.user.ActivationCode;
+import com.haythem.Security.user.ActivationCodeRepository;
+import com.haythem.Security.user.User;
+import com.haythem.Security.user.UserRepository;
 import jakarta.mail.MessagingException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,15 +19,13 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
-    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
-    private final TokenRepository tokenRepository;
+    private final ActivationCodeRepository activationCodeRepository;
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
@@ -35,9 +34,6 @@ public class AuthenticationService {
     private String activationUrl;
 
     public void register(RegistrationRequest request) throws MessagingException {
-//        var userRole = roleRepository.findByName("USER")
-//                //todo - better exception handling
-//                .orElseThrow(() -> new IllegalStateException("ROLE USER was not initialized"));
         var user = User.builder()
                 .firstname(request.getFirstName())
                 .lastname(request.getLastName())
@@ -52,29 +48,29 @@ public class AuthenticationService {
     }
 
     private void sendValidationEmail(User user) throws MessagingException {
-        var newToken = generateAndSavaActivationToken(user);
+        var Code = generateAndSavaActivationCode(user);
         //send email
         emailService.sendEmail(
                 user.getEmail(),
                 user.fullName(),
                 EmailTemplateName.ACTIVATE_ACCOUNT,
                 activationUrl,
-                newToken,
+                Code,
                 "Account Activation"
         );
     }
 
-    private String generateAndSavaActivationToken(User user) {
-        //generate token
-        String generatedToken = generateAndSavaActivationCode(6);
-        var token = Token.builder()
-                .token(generatedToken)
+    private String generateAndSavaActivationCode(User user) {
+        //generate code
+        String generatedCode = generateAndSavaActivationCode(6);
+        var token = ActivationCode.builder()
+                .code(generatedCode)
                 .createdAt(LocalDateTime.now())
                 .expiresAt(LocalDateTime.now().plusMinutes(15))
                 .user(user)
                 .build();
-        tokenRepository.save(token);
-        return generatedToken;
+        activationCodeRepository.save(token);
+        return generatedCode;
     }
 
     private String generateAndSavaActivationCode(int length) {
@@ -103,7 +99,7 @@ public class AuthenticationService {
     }
 
     public void activateAccount(String token) throws MessagingException {
-        Token savedToken = tokenRepository.findByToken(token)
+        ActivationCode savedToken = activationCodeRepository.findByCode(token)
                 // todo exception has to be defined
                 .orElseThrow(() -> new RuntimeException("Invalid token"));
         if (LocalDateTime.now().isAfter(savedToken.getExpiresAt())) {
@@ -118,6 +114,6 @@ public class AuthenticationService {
         userRepository.save(user);
 
         savedToken.setValidatedAt(LocalDateTime.now());
-        tokenRepository.save(savedToken);
+        activationCodeRepository.save(savedToken);
     }
 }
