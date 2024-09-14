@@ -3,6 +3,8 @@ package com.haythem.Security.auth;
 import com.haythem.Security.email.EmailService;
 import com.haythem.Security.email.EmailTemplateName;
 import com.haythem.Security.security.JwtService;
+import com.haythem.Security.token.Token;
+import com.haythem.Security.token.TokenRepository;
 import com.haythem.Security.user.ActivationCode;
 import com.haythem.Security.user.ActivationCodeRepository;
 import com.haythem.Security.user.User;
@@ -19,6 +21,9 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
+
+import static com.haythem.Security.token.TokenType.BEARER;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +34,7 @@ public class AuthenticationService {
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final TokenRepository tokenRepository;
 
     @Value("${application.mailing.frontend.activation-url}")
     private String activationUrl;
@@ -94,8 +100,33 @@ public class AuthenticationService {
         var claims = new HashMap<String, Object>();
         var user = ((User) auth.getPrincipal());
         var jwtToken = jwtService.generateToken(claims, user);
-        return AuthenticationResponse.builder()
-                .token(jwtToken).build();
+        revokeAllUserTokens(user);
+        var token = Token
+                .builder()
+                .token(jwtToken)
+                .expired(false)
+                .revoked(false)
+                .tokenType(BEARER)
+                .user(user)
+                .build();
+
+        tokenRepository.save(token);
+        return AuthenticationResponse
+                .builder()
+                .token(jwtToken)
+                .build();
+    }
+
+    private void revokeAllUserTokens(User user) {
+        List<Token> tokenList = tokenRepository.findAllValidTokenByUser(user.getId());
+        if (tokenList.isEmpty()) {
+            return;
+        }
+        tokenList.forEach(token -> {
+            token.setExpired(true);
+            token.setRevoked(true);
+        });
+        tokenRepository.saveAll(tokenList);
     }
 
     public void activateAccount(String token) throws MessagingException {

@@ -1,5 +1,6 @@
 package com.haythem.Security.user;
 
+import com.haythem.Security.token.Token;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,6 +17,7 @@ import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.List;
 
 
 @Getter
@@ -27,7 +29,8 @@ import java.util.Collection;
 @Table(name = "_user")
 @EntityListeners(AuditingEntityListener.class)
 public class User implements UserDetails, Principal {
-
+    @OneToMany(mappedBy = "user")
+    List<Token> tokens;
     @Id
     @GeneratedValue
     private Integer id;
@@ -41,11 +44,9 @@ public class User implements UserDetails, Principal {
     private boolean enabled;
     @Enumerated(EnumType.STRING)
     private RoleEnum role;
-
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdDate;
-
     @LastModifiedDate
     @Column(insertable = false)
     private LocalDateTime lastModifiedDate;
